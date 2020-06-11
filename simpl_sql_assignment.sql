@@ -39,6 +39,7 @@ order by USER_ID, TRANSACTION_DATE;
 -- 3. Write a query to extract top 25% of users based on amount spent
 Select USER_ID, total_spent, percentile
 from(
+-- calculating percentile by (rank of user on total spent/total count of users) 
   Select *, round((rank() over (order by total_spent))/(count(count_helper) over (partition by count_helper))*100,2)  percentile
   from(
     select USER_ID, sum(AMOUNT__) as total_spent, 1 as count_helper from `simpl.sql_data` group by 1,3 order by 2 
@@ -50,7 +51,7 @@ where percentile >= 75;
 Select *, round(avg(days_since_last_txn) over (partition by USER_ID ),1) as avg_order_delay
 from(
   Select * , date_diff(TRANSACTION_DATE, 
-                  lag( TRANSACTION_DATE) over (partition by USER_ID order by TRANSACTION_DATE )
+                  lag( TRANSACTION_DATE) over (partition by USER_ID order by TRANSACTION_DATE ) --taking previous row's date after ordering by txn_date
                   ,DAY) as days_since_last_txn
   from `simpl.sql_data` 
 )
@@ -60,6 +61,7 @@ order by USER_ID ,TRANSACTION_DATE ;
 Select count(distinct USER_ID) as three_month_users
 from(
   SELECT USER_ID  ,month, year
+  --lag1 is date of last transaxtion for previous mont's transaction
     , DATE_DIFF( date,lag( date) over (partition by user_id order by date), Month ) as lag1
     , DATE_DIFF( date,lag( date,2) over (partition by user_id order by date), Month ) as lag2
   from (
@@ -68,6 +70,7 @@ from(
       , extract(year from TRANSACTION_DATE ) as year
       , min(TRANSACTION_DATE) as date
     from `simpl.sql_data`
+  --grouping to make sure month and user are unique
     group by 1,2,3
   )
   order by 1,3,2
