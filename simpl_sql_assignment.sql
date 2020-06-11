@@ -47,11 +47,14 @@ from(
 )
 where percentile >= 75;
 
---4. Write a query to calculate time difference (in days) between current and previous order of each customer for every row and the avg time difference between two orders for every customer.
+--4. Write a query to calculate time difference (in days) between current and previous order of each customer for every 
+--    row and the avg time difference between two orders for every customer.
 Select *, round(avg(days_since_last_txn) over (partition by USER_ID ),1) as avg_order_delay
 from(
   Select * , date_diff(TRANSACTION_DATE, 
-                  lag( TRANSACTION_DATE) over (partition by USER_ID order by TRANSACTION_DATE ) --taking previous row's date after ordering by txn_date
+                  --taking previous row's date after ordering by txn_date
+                  lag( TRANSACTION_DATE) over (partition by USER_ID order by TRANSACTION_DATE )
+                
                   ,DAY) as days_since_last_txn
   from `simpl.sql_data` 
 )
